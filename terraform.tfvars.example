@@ -1,0 +1,33 @@
+# Example terraform.tfvars file for Azure AI Foundry Standard Private Configuration
+# Copy this file to terraform.tfvars and update the values for your environment
+
+# Required: Network Configuration
+agents_subnet_id = "/subscriptions/your-subscription-id/resourceGroups/your-network-rg/providers/Microsoft.Network/virtualNetworks/your-vnet/subnets/agents-subnet"
+foundry_subnet_id = "/subscriptions/your-subscription-id/resourceGroups/your-network-rg/providers/Microsoft.Network/virtualNetworks/your-vnet/subnets/foundry-subnet"
+
+# Required: Existing Resources Configuration
+existing_capability_host_resource_group_id = "/subscriptions/your-subscription-id/resourceGroups/your-existing-services-rg"
+existing_cosmosdb_account_name = "your-cosmos-account-name"
+existing_storage_account_name = "yourstorageaccountname"
+existing_search_service_name = "your-search-service-name"
+
+# Optional: Basic Configuration
+location = "eastus"
+project_name = "fin-analyst-poc-proj"
+project_display_name = "Financial Credit Analyst PoC - AI Project"
+project_description = "Financial Credit Analyst PoC Phase - AI project with private networking"
+sku = "S0"
+
+# Optional: Resource Group (leave commented to create new)
+# resource_group_resource_id = "/subscriptions/your-subscription-id/resourceGroups/your-existing-rg"
+
+# Optional: Monitoring (leave commented for default configuration)
+# monitor_private_link_scope_resource_id = "/subscriptions/your-subscription-id/resourceGroups/your-rg/providers/microsoft.insights/privatelinkscopes/your-ampls"
+
+# Optional: Tags
+tags = {
+  Environment = "Development"
+  Team        = "Credit and Lending"
+  Project     = "AI Foundry Project"
+  CostCenter  = "AI-Research"
+}
