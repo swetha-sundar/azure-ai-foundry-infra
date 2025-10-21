@@ -1,0 +1,32 @@
+# Example network configuration for Azure AI Foundry Standard Private
+# Copy this file to network.tfvars and update values for your environment
+
+# Basic Configuration
+project_name = "fin-analyst-poc-proj"
+location     = "eastus"
+
+# Resource Group Configuration
+# Set to false if you want to use an existing resource group
+create_network_resource_group = true
+# network_resource_group_name = "existing-network-rg"  # Uncomment if using existing RG
+
+# Virtual Network Configuration
+vnet_name = "secure-aif-vnet"  # Uncomment to use custom VNet name
+vnet_address_space = "10.0.0.0/16"
+
+# Subnet Configuration
+# These subnets will be used by AI Foundry for private networking
+foundry_subnet_address_prefix = "10.0.1.0/24"  # For AI Foundry private endpoints
+agent_subnet_address_prefix   = "10.0.2.0/24"  # For AI Foundry Agents injection
+
+# Security Configuration
+create_network_security_groups = true  # Create NSGs with basic security rules
+create_route_tables            = false # Set to true if you need custom routing
+
+# Tags
+tags = {
+  Environment = "Development"
+  Project     = "Financial-Analyst-AI-Foundry"
+  Purpose     = "Private-Networking"
+  Owner       = "Swetha Sundar"
+}
