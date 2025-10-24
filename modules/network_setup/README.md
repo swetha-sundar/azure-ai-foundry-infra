@@ -23,6 +23,8 @@ This configuration creates:
 
 ### 1. Deploy Network Infrastructure
 
+If you want to use an existing network, skip and go to step 3
+
 ```bash
 # Navigate to the network configuration directory
 cd /path/to/modules/network_setup
@@ -46,7 +48,15 @@ terraform apply -var-file="terraform.tfvars" -target="azurerm_virtual_network.fo
 terraform output ai_foundry_network_config
 ```
 
-### 3. Use in AI Foundry Configuration
+### [Optional] 3. Existing Network Infrastructure
+
+Follow this step only if you want to use your existing virtual network and subnets
+
+- **Virtual Network**: An existing VNet with two subnets available for AI Foundry and Agents injection
+- **Foundry Subnet**: Subnet ID where the AI Foundry service will be injected
+- **Agents Subnet**: Subnet ID where AI Foundry Agents will be injected
+
+### 4. Use in AI Foundry Configuration
 
 Copy the subnet IDs to your main `terraform.tfvars` file:
 

@@ -34,20 +34,14 @@ This configuration is suited for:
 
 ## Prerequisites
 
-### 1. Existing Network Infrastructure
-
-- **Virtual Network**: An existing VNet with two subnets available for AI Foundry and Agents injection
-- **Foundry Subnet**: Subnet ID where the AI Foundry service will be injected
-- **Agents Subnet**: Subnet ID where AI Foundry Agents will be injected
-
-### 2. Existing Capability Host Resources
+### 1. Existing Capability Host Resources
 
 - **Azure Cosmos DB Account**: Existing Cosmos DB account for agent data storage
 - **Azure Storage Account**: Existing Storage Account for file and blob storage
 - **Azure AI Search Service**: Existing AI Search service for search capabilities
 - All existing resources must be in the same region as the AI Foundry deployment
 
-### 3. Azure Permissions
+### 2. Azure Permissions
 
 Active Azure subscription(s) with appropriate permissions for the target resource group and services. Suggested roles include:
 
@@ -59,7 +53,7 @@ Active Azure subscription(s) with appropriate permissions for the target resourc
   - **Azure AI User**: Needed to create and edit agents
   - **Cognitive Services OpenAI Contributor**: Needed to write OpenAI responses API
 
-### 4. Register Resource Providers
+### 3. Register Resource Providers
 
 ```shell
 az provider register --namespace 'Microsoft.App'
@@ -70,7 +64,7 @@ az provider register --namespace 'Microsoft.Storage'
 az provider register --namespace 'Microsoft.Network'
 ```
 
-### 5. Tools Requirements
+### 4. Tools Requirements
 
 - Sufficient quota for all resources in your target Azure region
 - Azure CLI installed and configured on your local workstation or deployment pipeline server
@@ -102,11 +96,66 @@ export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
 terraform init
 ```
 
-### 5. Configure Variables
+NOTE: if you already have an existing Network you want to reuse, skip Step 5
 
-Copy the terraform.tfvars.example file to terraform.tfvars and update the values for your environment
+### 5. Configure Network Variables
 
-### 6. Review and Deploy
+1. Go to modules/network_setup folder
+2. Copy the terraform.tfvars.example file to terraform.tfvars and update the values for your environment
+
+### 6. Review and Deploy Network
+
+1. Follow instructions in [Readme in network_setup module](./modules/network_setup/README.md) to deploy the virtual network and subnets
+2. Copy the output variables "foundry_subnet_id" and "agent_subnet_id" to the root folder's terraform.tfvars file
+
+#### 6-a. Create Private DNS zones
+
+```bash
+   az network private-dns zone create \
+     --resource-group <your-network-resource-group> \
+     --name privatelink.cognitiveservices.azure.com
+
+   az network private-dns zone create \
+     --resource-group <your-network-resource-group> \
+     --name privatelink.services.ai.azure.com
+
+   az network private-dns zone create \
+     --resource-group <your-network-resource-group> \
+     --name privatelink.openai.azure.com
+```
+
+#### 6-b. Link the DNS zones with the Virtual Network created
+
+ ```bash
+   az network private-dns link vnet create \
+     --resource-group <your-network-resource-group> \
+     --zone-name privatelink.cognitiveservices.azure.com \
+     --name cognitive-services-vnet-link \
+     --virtual-network fin-analyst-vnet \
+     --registration-enabled false
+
+   az network private-dns link vnet create \
+     --resource-group <your-network-resource-group> \
+     --zone-name privatelink.services.ai.azure.com \
+     --name ai-services-vnet-link \
+     --virtual-network fin-analyst-vnet \
+     --registration-enabled false
+
+   az network private-dns link vnet create \
+     --resource-group <your-network-resource-group> \
+     --zone-name privatelink.openai.azure.com \
+     --name openai-vnet-link \
+     --virtual-network fin-analyst-vnet \
+     --registration-enabled false
+   ```
+
+### 7. Configure the variables for AI Foundry
+
+1. Go to root folder
+2. Copy the terraform.tfvars.example file to terraform.tfvars and update the values for your environment
+3. Ensure you update the subnet ids with the above output values from the previous step
+
+### 8. Review and Deploy Network
 
 ```shell
 # Review the deployment plan
@@ -270,3 +319,40 @@ For issues specific to this extracted configuration:
 ## License
 
 Copyright (c) Microsoft Corporation. Licensed under the MIT license.
+
+## Troubleshooting Guide
+
+If you run into issues:
+
+**Error:**
+
+``` bash
+│ Error: Failed to create/update resource
+│
+│   with module.ai_foundry.azapi_resource.ai_foundry,
+│   on modules/ai_foundry/main.tf line 3, in resource "azapi_resource" "ai_foundry":
+│    3: resource "azapi_resource" "ai_foundry" {
+│
+│ creating/updating Resource: (ResourceId
+│ "/subscriptions/subscription-id/resourceGroups/rg-finanalyst-private-zriti/providers/Microsoft.CognitiveServices/accounts/cog-finanalyst-private-zriti"
+│ / Api Version "2025-06-01"): PUT
+│ https://management.azure.com/subscriptions/a8d2b99a-0f7d-4f8d-9510-bcfc5bacf47f/resourceGroups/rg-finanalyst-private-zriti/providers/Microsoft.CognitiveServices/accounts/cog-finanalyst-private-zriti
+│ --------------------------------------------------------------------------------
+│ RESPONSE 409: 409 Conflict
+│ ERROR CODE: FlagMustBeSetForRestore
+--------------------------------------------------------------------------------
+│ {
+│   "error": {
+│     "code": "FlagMustBeSetForRestore",
+│     "message": "An existing resource with ID '/subscriptions/subscriptionid/resourceGroups/rg-finanalyst-private-zriti/providers/Microsoft.CognitiveServices/accounts/cog-finanalyst-private-zriti' has been soft-deleted. To restore the resource, you must specify 'restore' to be 'true' in the property. If you don't want to restore existing resource, please purge it first."
+│   }
+│ }
+│ --------------------------------------------------------------------------------
+│
+```
+
+**Solution:**
+
+``` bash
+az cognitiveservices account purge --resource-group <ai-foundry-resource-group> --name <name of the foundry account> --location eastus
+```
